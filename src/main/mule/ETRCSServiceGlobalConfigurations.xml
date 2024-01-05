@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule
+	xmlns:json="http://www.mulesoft.org/schema/mule/json"
+	xmlns:validation="http://www.mulesoft.org/schema/mule/validation"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:java="http://www.mulesoft.org/schema/mule/java"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns:db="http://www.mulesoft.org/schema/mule/db"
+	xmlns:spring="http://www.mulesoft.org/schema/mule/spring"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/spring http://www.mulesoft.org/schema/mule/spring/current/mule-spring.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/java http://www.mulesoft.org/schema/mule/java/current/mule-java.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/validation http://www.mulesoft.org/schema/mule/validation/current/mule-validation.xsd
+http://www.mulesoft.org/schema/mule/json http://www.mulesoft.org/schema/mule/json/current/mule-json.xsd">
+
+	<http:listener-config
+		name="etrcs-httpListenerConfig" doc:name="HTTP Listener Configuration">
+		<http:listener-connection
+			host="${etrcs.host}" port="${etrcs.port}" connectionIdleTimeout="30000">
+		</http:listener-connection>
+	</http:listener-config>
+
+	<http:request-config
+		name="HTTP_Request_Configuration_GWS"
+		basePath="${generic.webservices.host.basePath}"
+		doc:name="HTTP Request Configuration for Generic Web Services" >
+		<http:request-connection host="${generic.webservices.host}" port="${generic.webservices.port}" />
+	</http:request-config>
+
+	<!-- <db:config name="etrcs_db_configuration">
+		<db:oracle-connection
+			host="${sales.oracle.db.host}" port="${sales.oracle.db.port}"
+			user="${etrcsdb.username}" password="${etrcsdb.password}"
+			serviceName="EBR01T" doc:name="Oracle Connection Configuration">
+		</db:oracle-connection>
+		<expiration-policy />
+	</db:config> -->
+
+<!-- 	<db:config name="com_db_configuration">
+		<db:oracle-connection
+			host="${com.oracle.db.host}" port="${com.oracle.db.port}"
+			user="${com.db.username}" password="${com.db.password}"
+			serviceName="EBR01T" doc:name="Oracle Connection Configuration">
+		</db:oracle-connection>
+		<expiration-policy />
+	</db:config> -->
+
+ <!-- <configuration doc:name="Configuration"
+		defaultErrorHandler-ref="etrcs-apiKitGlobalExceptionMapping">
+		<expression-language autoResolveVariables="true">
+        <![CDATA[#[import com.ebreez.etrcs.constants.ETRCSConstants]]]>
+		</expression-language>
+	</configuration> --> 	
+	<configuration-properties doc:name="Configuration properties" doc:id="a883ce81-3f6e-43a4-b10c-8ee5c0565d38" file="etrcs-application-${environment}.properties" />
+	<!-- <spring:config name="Spring_Config" doc:name="Spring Config" doc:id="6d1b70c3-e330-4657-9f64-2c937c75fa23" files="traacs-application-${environment}.properties, etrcs-product-types.properties" />   -->
+	<configuration-properties doc:name="Configuration properties" doc:id="5ce81e04-c1f4-4b39-9b2b-86d9a38e3f1b" file="etrcs-db.properties" />
+	<configuration-properties doc:name="Configuration properties" doc:id="4c9e9627-dda9-4bc6-8810-897f57081549" file="traacs-application-${environment}.properties" />
+	<configuration doc:name="Configuration" doc:id="bcba5474-2413-4de6-9bce-d64c4c08f1f8" defaultErrorHandler-ref="etrcs-apiKitGlobalExceptionMapping" />
+	<spring:config name="Spring_Config" doc:name="Spring Config" doc:id="d08e275b-74fe-49a4-a2b6-829aae9e87b4" files="beans.xml" />
+	<db:config name="com_db_configuration" doc:name="Database Config" doc:id="cc33283e-cbf4-4c6e-906f-ab8aea0831f0" >
+		<db:oracle-connection host="${com.oracle.db.host}" port="${com.oracle.db.port}" user="${com.db.username}" password="${com.db.password}" serviceName="${com.oracle.db.servicename}"/>
+	</db:config>
+	<db:config name="etrcs_db_configuration" doc:name="Database Config" doc:id="d6754aad-bd6d-4101-9cdb-24edb950a2f6" >
+		<db:oracle-connection host="${sales.oracle.db.host}" port="${sales.oracle.db.port}" user="${etrcsdb.username}" password="${etrcsdb.password}" serviceName="${sales.oracle.db.servicename}" />
+	</db:config>
+
+</mule>
