@@ -1,0 +1,246 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:java="http://www.mulesoft.org/schema/mule/java"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking"
+	xmlns:json="http://www.mulesoft.org/schema/mule/json"
+	xmlns:dw="http://www.mulesoft.org/schema/mule/ee/dw"
+	xmlns:metadata="http://www.mulesoft.org/schema/mule/metadata"
+	xmlns:db="http://www.mulesoft.org/schema/mule/db"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns:quartz="http://www.mulesoft.org/schema/mule/quartz"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:spring="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/quartz http://www.mulesoft.org/schema/mule/quartz/current/mule-quartz.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee/dw/current/dw.xsd
+http://www.mulesoft.org/schema/mule/json http://www.mulesoft.org/schema/mule/json/current/mule-json.xsd
+http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd
+http://www.mulesoft.org/schema/mule/java http://www.mulesoft.org/schema/mule/java/current/mule-java.xsd">
+	<flow name="ETRCSStandAloneProcessInvoiceFlow"
+		doc:id="4a0370f6-7d48-463c-9a8a-bfdc66c2903f">
+		<!-- <scheduler doc:name="Scheduler"
+			doc:id="dc247b75-7965-4998-8ba5-c4880bda675e">
+			<scheduling-strategy>
+				<cron expression="${etrcs.get.booking.details.interval}" />
+			</scheduling-strategy>
+		</scheduler> -->
+		<set-variable variableName="rootId" value="message.id"
+			doc:name="Variable" />
+		<logger message="#['triggered standalone flow'] " level="INFO"
+			doc:name="Logger" />
+		<logger level="INFO" doc:name="Logger"
+			doc:id="0b72a9db-2c8a-49c4-9f07-ccea89430f0c"
+			message="#[vars.'ETRCSConstants.VAR_MESSAGE_ROOTID']" />
+		<flow-ref name="BuildNCacheMasterDataFlow"
+			doc:name="BuildNCacheMasterDataFlow" />
+		<db:select doc:name="failure flyin codes">
+			<db:sql><![CDATA[${etrcs.com.select.flyin.codes.query}]]></db:sql>
+		</db:select>
+		<java:invoke-static
+			doc:name="springBuildFailureFlyinCodeListBean"
+			class="com.ebreez.etrcs.processor.FailureFlyinCodeListBuilder"
+			method="onCall" />
+		<foreach doc:name="For Each" collection="#[payload]">
+			<logger level="INFO" doc:name="Logger"
+				message="Processing for FlyinCode: #[payload]" />
+			<set-variable variableName="flyinCode"
+				value="#[payload]" doc:name="Variable to hold flyinCode" />
+			<set-variable
+				variableName="SUPPLIER_INDEX_FROM_FLIGHT_DETAILS2"
+				value="${SUPPLIER_INDEX_FROM_FLIGHT_DETAILS2}"
+				doc:name="Supplier Name Variable Index" />
+			<choice>
+				<when
+					expression="#[vars.flyinCode startsWith 'S-C' or vars.flyinCode startsWith 'R-C' or vars.flyinCode startsWith 'S-33' or vars.flyinCode startsWith 'R-33']">
+					<flow-ref name="subExtractDBComData" />
+				</when>
+				<otherwise>
+					<flow-ref name="subExtractDBSalesData" />
+				</otherwise>
+			</choice>
+
+			<set-variable
+				variableName="#[ETRCSConstants.TRAACS_ACTION]"
+				value="${traacs.create.action}" doc:name="Variable" />
+			<set-variable
+				variableName="#[ETRCSConstants.VAR_MODIFIED_BY]"
+				value="#['STANDALONE FLOW']" doc:name="Variable" />
+			<set-variable
+				variableName="#[ETRCSConstants.HOTEL_STATIC_DATA_URL]"
+				value="${pkgservice.hotel.static.data.url}" doc:name="Variable" />
+			<set-variable
+				variableName="#[ETRCSConstants.TIMEOUT_DIFFERENCE_IN_HOURS]"
+				value="${standalone.timeout.diff.hours}" doc:name="Variable" />
+			<db:select doc:name="Database"
+				doc:id="86c81c0b-e274-4df5-a758-7477ae3c5c1c"
+				target="ETRCSConstants.VAR_REQUEST_COUNT">
+				<db:sql><![CDATA[${select.traacs.request.count}]]></db:sql>
+			</db:select>
+			<async doc:name="Async">
+				<set-payload
+					value="flowVars[ETRCSConstants.VAR_UPDATE_REQUEST]"
+					doc:name="Set Payload" />
+				<ee:transform doc:name="Transform Payload">
+					<ee:message>
+						<ee:set-payload><![CDATA[%dw 2.0
+            output application/java
+            ---
+            if (isEmpty(payload))
+                null
+            else
+                payload[0]['TXN_ID'] as String
+        ]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+
+
+				<logger message="Request from Stand alone #[payload]"
+					level="INFO" doc:name="Logger" />
+			</async>
+			<choice doc:name="Choice">
+				<when
+					expression="#[flowVars[ETRCSConstants.VAR_UPDATE_REQUEST] != null]">
+					<flow-ref name="TS.TraacsProcessInvoiceFlow"
+						doc:name="TS.TraacsProcessInvoiceFlow" />
+				</when>
+				<otherwise>
+					<logger message="No Records to process" level="INFO"
+						category="TraacsService" doc:name="No Records to process" />
+				</otherwise>
+			</choice>
+		</foreach>
+		<set-payload
+			value="flowVars[ETRCSConstants.VAR_UPDATE_RESPONSE]"
+			doc:name="Set Payload" />
+		<!-- <expression-component doc:name="Compute End time"><![CDATA[flowVars.BATCH_END_TIME=server.dateTime.toCalendar().getTimeInMillis(); 
+			flowVars.varProcessingTimeSecs = (flowVars.BATCH_END_TIME - sessionVars.BATCH_START_TIME)/1000; 
+			flowVars.varProcessingTimeMins = flowVars.varProcessingTimeSecs/60; ]]></expression-component> -->
+
+		<ee:transform doc:name="Compute End Time">
+			<ee:message>
+				<ee:set-payload><![CDATA[
+                %dw 2.0
+                output application/json
+                var batchEndTime = now()
+                var varProcessingTimeSecs = (batchEndTime - vars.BATCH_START_TIME) as Number / 1000
+                var varProcessingTimeMins = varProcessingTimeSecs / 60
+                ---
+                {
+                    BATCH_END_TIME: batchEndTime,
+                    varProcessingTimeSecs: varProcessingTimeSecs,
+                    varProcessingTimeMins: varProcessingTimeMins
+                }
+            ]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+
+
+		<logger
+			message="*** Completed submitting all Invoices in the batch to Traacs ***"
+			level="INFO" doc:name="Logger" />
+		<logger
+			message="*** Time taken by Batch is: #[flowVars.varProcessingTimeSecs] secs (#[flowVars.varProcessingTimeMins] mins).  Record count: #[sessionVars.EXPECTED_TRAACS_CALLS]"
+			level="INFO" doc:name="Print Time taken for Batch" />
+
+	</flow>
+	<flow name="ETRCSStandAloneProcessInvoiceFlow1"
+		doc:id="221f19fe-f663-4450-90f1-57b4b6c70339">
+		<http:listener doc:name="Listener"
+			doc:id="5bcb8edd-ba3d-48b8-b4b4-b789ba3a820c"
+			path="${etrcs.get.booking.details.http.path}"
+			config-ref="etrcs-httpListenerConfig" />
+		<flow-ref doc:name="Flow Reference"
+			doc:id="de49387e-0e93-47e7-af8f-22b72fd48a9e"
+			name="ETRCSStandAloneProcessInvoiceFlow" />
+	</flow>
+	<flow name="subExtractDBSalesData">
+
+		<db:select config-ref="com_db_configuration"
+			doc:name="Database"
+			target="ETRCSConstants.VAR_SALES_MASTER_DATA">
+			<db:sql><![CDATA[${etrcs.master.data.select.query}]]></db:sql>
+		</db:select>
+		<java:invoke-static
+			doc:name="springExtractBookingNBuildRequestProcessorBean"
+			class="com.ebreez.etrcs.processor.ExtractBookingNBuildRequestProcessor"
+			method="onCall, invokeUtilToPopulateData" />
+		<error-handler>
+			<on-error-propagate type="MULE:ANY"
+				doc:name="Catch Exception Strategy">
+				<logger message="Exception occured is #[message.exception]"
+					level="INFO" doc:name="Logger" />
+			</on-error-propagate>
+		</error-handler>
+	</flow>
+
+	<flow name="subExtractDBComData">
+
+		<db:select target="flightCount" doc:name="flightCount">
+			<db:sql><![CDATA[${com.data.filter.select.query}]]></db:sql>
+		</db:select>
+
+		<choice doc:name="Choice">
+			<when expression="#[vars.flightCount &gt; 0]">
+				<db:select target="ETRCSConstants.VAR_SALES_MASTER_DATA"
+					doc:name="VAR_SALES_MASTER_DATA">
+					<db:sql><![CDATA[${com.ticket.data.select.query}]]></db:sql>
+				</db:select>
+			</when>
+			<otherwise>
+				<db:select target="ETRCSConstants.VAR_SALES_MASTER_DATA"
+					doc:name="VAR_SALES_MASTER_DATA">
+					<db:sql><![CDATA[${com.hotel.data.select.query}]]></db:sql>
+				</db:select>
+			</otherwise>
+		</choice>
+		<java:invoke-static
+			doc:name="springExtractBookingNBuildRequestProcessorBean"
+			class="com.ebreez.etrcs.processor.ExtractBookingNBuildRequestProcessor"
+			method="onCall, invokeUtilToPopulateData" />
+		<error-handler>
+			<on-error-propagate type="MULE:ANY"
+				doc:name="Catch Exception Strategy">
+				<logger message="Exception occured is #[message.exception]"
+					level="INFO" doc:name="Logger" />
+			</on-error-propagate>
+		</error-handler>
+	</flow>
+	<flow name="NullTicketHandler">
+		<db:select doc:name="Database" target="FlyinCodesWithNullNo">
+			<db:sql><![CDATA[${etrcs.com.select.null.tickets.query}]]></db:sql>
+		</db:select>
+		<java:invoke-static
+			doc:name="springNullFlyinCodeListBuilderBean"
+			class="com.ebreez.etrcs.processor.NullFlyinCodeListBuilder"
+			method="onCall, createNullFlyinCodeList" />
+		<logger message="NullTicketHandler flow - updating sales DB "
+			level="INFO" doc:name="Logger" />
+		<db:stored-procedure
+			config-ref="com_db_configuration" doc:name="Database">
+			<db:sql><![CDATA[${sales.db.update.tkt.no.query}]]></db:sql>
+		</db:stored-procedure>
+		<logger
+			message="NullTicketHandler flow - com DB update query invoked"
+			level="INFO" doc:name="Logger" />
+		<db:stored-procedure
+			doc:name="Database">
+			<db:sql><![CDATA[${com.db.update.tkt.no.query}]]></db:sql>
+		</db:stored-procedure>
+		<error-handler>
+			<on-error-propagate type="MULE:ANY"
+				doc:name="Catch Exception Strategy">
+				<logger
+					message="Error while handling null ticket numbers #[message.exception]"
+					level="INFO" doc:name="Logger" />
+			</on-error-propagate>
+		</error-handler>
+	</flow>
+
+</mule>

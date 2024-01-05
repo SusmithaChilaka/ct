@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:spring="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd">
+	<!--  <spring:config>
+		<spring:bean id="springBuildTraacsRequestProcessorBeanId"
+			name="springBuildTraacsRequestProcessorBean"
+			class="com.ebreez.etrcs.traacs.processor.BuildTraacsRequestProcessor"
+			scope="singleton" />
+		<spring:bean id="springTraacsDBRequestBuilderBeanId"
+			name="springTraacsDBRequestBuilderBean"
+			class="com.ebreez.etrcs.traacs.db.processor.TraacsDBRequestBuilder"
+			scope="singleton" />
+		<spring:bean id="springAuthenticationKeyMapperBeanId"
+			name="springAuthenticationKeyMapperBean"
+			class="com.ebreez.etrcs.traacs.processor.AuthenticationKeyMapper"
+			scope="singleton" />
+		<spring:bean id="springTraacsResponseProcessorBeanId"
+			name="springTraacsResponseProcessorBean"
+			class="com.ebreez.etrcs.traacs.processor.TraacsResponseProcessor"
+			scope="singleton" />
+		<spring:bean
+			id="springTraacsRequestInvoiceProcessorBeanId"
+			name="springTraacsRequestInvoiceProcessorBean"
+			class="com.ebreez.etrcs.traacsRequestInvoice.TraacsRequestInvoiceProcessor"
+			scope="singleton" />
+		<spring:bean id="TraacsFlightMapperFactoryBean"
+			name="TraacsFlightMapperFactoryBean"
+			class="com.ebreez.etrcs.traacs.mappers.TraacsMapperFactory">
+			<spring:property name="traacsMapperClass"
+				value="com.ebreez.etrcs.traacs.mappers.TraacsFlightRequestMapper" />
+		</spring:bean>
+
+		<spring:bean id="TraacsHotelMapperFactoryBean"
+			name="TraacsHotelMapperFactoryBean"
+			class="com.ebreez.etrcs.traacs.mappers.TraacsMapperFactory">
+			<spring:property name="traacsMapperClass"
+				value="com.ebreez.etrcs.traacs.mappers.TraacsHotelRequestMapper" />
+		</spring:bean>
+		<spring:bean id="TraacsMasterMapperFactoryBean"
+			name="TraacsMasterMapperFactoryBean"
+			class="com.ebreez.etrcs.traacs.mappers.TraacsMapperFactory">
+			<spring:property name="traacsMapperClass"
+				value="com.ebreez.etrcs.traacs.mappers.TraacsMasterRequestMapper" />
+		</spring:bean> 
+
+	</spring:config>  -->
+	<http:request-config
+		name="HTTP_Request_Configuration_Sales_Global"
+		basePath="${traacs.url.base.path}"
+		doc:name="HTTP Request Configuration"
+		responseTimeout="${traacs.url.response.timeout}">
+		<http:request-connection
+			host="${traacs.url.host.gb}" port="${traacs.url.port.gb}"
+			connectionIdleTimeout="${traacs.url.connection.timeout}" />
+	</http:request-config>
+	<http:request-config
+		name="HTTP_Request_Configuration_Sales_Egypt"
+		basePath="${traacs.url.base.path}"
+		responseTimeout="${traacs.url.response.timeout}"
+		doc:name="HTTP Request Configuration">
+		<http:request-connection
+			host="${traacs.url.host.eg}" port="${traacs.url.port.eg}"
+			connectionIdleTimeout="${traacs.url.connection.timeout}" />
+	</http:request-config>
+</mule>

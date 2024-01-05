@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns:os="http://www.mulesoft.org/schema/mule/os"
+	xmlns:java="http://www.mulesoft.org/schema/mule/java"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns:quartz="http://www.mulesoft.org/schema/mule/quartz"
+	xmlns:db="http://www.mulesoft.org/schema/mule/db"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:spring="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+                          http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+                          http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+                          http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+                          http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+                          http://www.mulesoft.org/schema/mule/quartz http://www.mulesoft.org/schema/mule/quartz/current/mule-quartz.xsd
+http://www.mulesoft.org/schema/mule/java http://www.mulesoft.org/schema/mule/java/current/mule-java.xsd
+http://www.mulesoft.org/schema/mule/os http://www.mulesoft.org/schema/mule/os/current/mule-os.xsd">
+
+	<!-- Sub-Flow: BuildNCacheMasterDataFlow -->
+	<sub-flow name="BuildNCacheMasterDataFlow">
+		<flow-ref name="BuildNCacheAirlinesMasterDataFlow"
+			doc:name='BuildNCacheAirlinesMasterDataFlow' />
+		<flow-ref name="BuildNCacheSupplierMasterDataFlow"
+			doc:name="BuildNCacheAirlinesMasterDataFlow" />
+		<flow-ref name="BuildNCacheCityCountryMasterDataFlow"
+			doc:name="BuildNCacheAirlinesMasterDataFlow" />
+	</sub-flow>
+
+	<!-- Sub-Flow: BuildNCacheAirlinesMasterDataFlow -->
+	<sub-flow name="BuildNCacheAirlinesMasterDataFlow">
+
+		<db:select doc:name="Database"
+			doc:id="63257e04-0d6c-440f-8801-f232942788f3"
+			config-ref="com_db_configuration"
+			target="ETRCSConstants.VAR_COM_AIRLINE_DATA">
+			<db:sql><![CDATA[${com.airline.name.select.query}]]></db:sql>
+		</db:select>
+		<java:invoke
+			doc:name="springExtractNBuildAirlinesMapProcessorBean"
+			doc:id="626e1a95-533a-4bce-8d28-6492b16fed58"
+			class="com.ebreez.etrcs.master.data.processor.ExtractNBuildAirlinesMapProcessor"
+			method="onCall()"
+			target="ETRCSConstants.VAR_AIRLINE_NAMES_MAP" instance="springExtractNBuildAirlinesMapProcessorBeanId">
+			<java:args ><![CDATA[#[{
+	list:payload
+}]]]></java:args>
+		</java:invoke>
+		<logger message="Extracted airline List " level="INFO"
+			doc:name="Logger" />
+	</sub-flow>
+
+
+	<!-- Sub-Flow: BuildNCacheCityCountryMasterDataFlow -->
+	<sub-flow name="BuildNCacheCityCountryMasterDataFlow">
+
+		<db:select doc:name="City Country"
+			doc:id="3ff51b21-1e4c-4ec1-9fbe-cd66cdad1ea7"
+			config-ref="com_db_configuration"
+			target="ETRCSConstants.VAR_COM_CITY_COUNTRY_DATA">
+			<db:sql><![CDATA[${com.city.country.select.query}]]></db:sql>
+		</db:select>
+		<db:select doc:name="Flt City Country"
+			doc:id="f78e1061-1ee4-4bc9-8baf-7f82c42a7b3a"
+			config-ref="com_db_configuration"
+			target="ETRCSConstants.VAR_FLT_COM_CITY_COUNTRY_DATA">
+			<db:sql><![CDATA[${com.flt.city.country.select.query}]]></db:sql>
+		</db:select>
+		<db:select doc:name="Country Code &amp; Name"
+			doc:id="bf49cf05-4b73-405b-81b0-8b449cb2fd66"
+			config-ref="com_db_configuration"
+			target="ETRCSConstants.VAR_COUNTRY_CODE_AND_NAME_DATA">
+			<db:sql><![CDATA[${com.select.query.countryCode.countryName}]]></db:sql>
+		</db:select>
+		<java:invoke
+			doc:name="springExtractNBuildCityMapProcessorBean"
+			doc:id="9022a8ff-0311-46ff-8488-b6bdc0fda90c"
+			class="com.ebreez.etrcs.master.data.processor.ExtractNBuildCityMapProcessor"
+			method="onCall()"
+			target="ETRCSConstants.VAR_COM_CITY_COUNTRY_MAP" instance="springExtractNBuildCityMapProcessorBeanId"/>
+		<logger message="Extracted City and CountryList " level="INFO"
+			doc:name="Logger" />
+	</sub-flow>
+
+
+	<!-- Sub-Flow: BuildNCacheSupplierMasterDataFlow -->
+	<sub-flow name="BuildNCacheSupplierMasterDataFlow">
+		<db:select doc:name="com.hotel.supplier.ids.select.query"
+			doc:id="3f141521-6ff3-437d-acec-793280357ff2"
+			config-ref="com_db_configuration"
+			target="ETRCSConstants.VAR_HOTEL_SUPPLIER_IDS_DATA">
+			<db:sql><![CDATA[${com.hotel.supplier.ids.select.query}]]></db:sql>
+		</db:select>
+		<db:select doc:name="com.flight.supplier.ids.select.query"
+			doc:id="7fca319b-ad96-40c7-815f-ec81ce2254ba"
+			config-ref="com_db_configuration"
+			target="ETRCSConstants.VAR_FLIGHT_SUPPLIER_IDS_DATA">
+			<db:sql><![CDATA[${com.flight.supplier.ids.select.query}]]></db:sql>
+		</db:select>
+		<db:select doc:name="com.car.supplier.ids.select.query"
+			doc:id="c06a4f21-6ce1-4282-8be8-97badd3ad3c1"
+			config-ref="com_db_configuration"
+			target="ETRCSConstants.VAR_CAR_SUPPLIER_IDS_DATA">
+			<db:sql><![CDATA[${com.car.supplier.ids.select.query}]]></db:sql>
+		</db:select>
+		<db:select doc:name="COMPANY_PROFILE_1"
+			doc:id="4e118a55-66e3-4ef7-b883-999e13f7408f"
+			target="ETRCSConstants.VAR_COM_DEPT_COSTCENTER_DATA"
+			config-ref="com_db_configuration">
+			<db:sql><![CDATA[${com.costcenter.dept.select.query}]]></db:sql>
+		</db:select>
+		<db:select doc:name="Database"
+			doc:id="1fe5a7bb-7547-48ec-a0e1-1b9879517598"
+			config-ref="com_db_configuration"
+			target="ETRCSConstants.VAR_COM_ACCOUNT_CODE_DATA">
+			<db:sql><![CDATA[${com.account.code.select.query}]]></db:sql>
+		</db:select>
+		<db:select doc:name="FOP_DETAILS_1"
+			doc:id="b81314fe-483c-4619-9f5a-0f8994a8e3e6"
+			config-ref="com_db_configuration"
+			target="ETRCSConstants.VAR_COM_FOP_ACCOUNT_DATA">
+			<db:sql><![CDATA[${com.fop.account.select.query}]]></db:sql>
+		</db:select>
+		<db:select doc:name="com.master.bank.name.select.query"
+			doc:id="f3b509c7-7511-4ce5-8914-db365117258d"
+			config-ref="com_db_configuration"
+			target="ETRCSConstants.VAR_MASTER_BANK_NAME_DATA">
+			<db:sql><![CDATA[${com.master.bank.name.select.query}]]></db:sql>
+		</db:select>
+		<java:invoke
+			doc:name="springExtractNBuildSupplierMasterMapProcessorBean"
+			doc:id="8b092f42-a6ca-4c72-9aaf-7c74e40adf35"
+			class="com.ebreez.etrcs.master.data.processor.ExtractNBuildSupplierMasterMapProcessor"
+			method="onCall()"
+			target="ETRCSConstants.VAR_SUPPLIER_DATA_MAP" instance="springExtractNBuildSupplierMasterMapProcessorBeanId"/>
+		<logger message="Extracted VAR_SUPPLIER_DATA_MAP " level="INFO"
+			doc:name="Logger" />
+	</sub-flow>
+
+
+	<!-- Sub-Flow: BuildMainFlowMasterData -->
+	<sub-flow name="BuildMainFlowMasterData">
+		<db:select doc:name="COMPANY_PROFILE_2"
+			doc:id="f17057cc-3d34-4825-93b0-a6b413e01882"
+			config-ref="com_db_configuration"
+			target="ETRCSConstants.VAR_COM_DEPT_COSTCENTER_DATA">
+			<db:sql><![CDATA[${com.costcenter.dept.select.query}]]></db:sql>
+		</db:select>
+		<db:select
+			doc:name="ETRCSConstants.VAR_FLIGHT_SUPPLIER_IDS_DATA"
+			doc:id="1fddb337-a6fd-4a7d-985e-112dd556cbb4"
+			config-ref="com_db_configuration"
+			target="ETRCSConstants.VAR_FLIGHT_SUPPLIER_IDS_DATA">
+			<db:sql><![CDATA[${com.flight.supplier.ids.select.query}]]></db:sql>
+		</db:select>
+		<db:select doc:name="com.hotel.supplier.ids.select.query"
+			doc:id="b65f89c6-0e4d-4c78-82fe-8416db0c3cb3"
+			config-ref="com_db_configuration"
+			target="ETRCSConstants.VAR_HOTEL_SUPPLIER_IDS_DATA">
+			<db:sql><![CDATA[${com.hotel.supplier.ids.select.query}]]></db:sql>
+		</db:select>
+		<db:select doc:name="Database"
+			doc:id="92f88828-bbff-487d-bf8f-fba07b72f0b1"
+			config-ref="com_db_configuration"
+			target="ETRCSConstants.VAR_COM_FOP_ACCOUNT_DATA">
+			<db:sql><![CDATA[${com.fop.account.select.query}]]></db:sql>
+		</db:select>
+		<java:invoke doc:name="ExtractNBuildSupplierMasterMapProcessor"
+			class="com.ebreez.etrcs.master.data.processor.ExtractNBuildSupplierMasterMapProcessor"
+			method="onCall()"
+			target="ETRCSConstants.VAR_SUPPLIER_DATA_MAP" instance="springExtractNBuildSupplierMasterMapProcessorBeanId"/>
+	</sub-flow>
+
+</mule>
