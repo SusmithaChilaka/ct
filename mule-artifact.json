@@ -1,0 +1,11 @@
+{
+  "minMuleVersion": "4.4.0",
+  "classLoaderModelLoaderDescriptor": {
+    "id": "mule",
+    "attributes": {
+      "importedPackages": "etrcs-common/src/main/java/com/ebreez/etrcs/*",
+      "importedResources": "etrcs-common/src/main/resources/*",
+      "exportedResources":"beans.xml"
+    }
+  }
+}
